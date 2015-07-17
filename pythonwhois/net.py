@@ -1,8 +1,8 @@
-import socket, re, sys
+import socket, re, sys, socks
 from codecs import encode, decode
 from . import shared
 
-def get_whois_raw(domain, server="", previous=None, rfc3490=True, never_cut=False, with_server_list=False, server_list=None, interface=None):
+def get_whois_raw(domain, server="", previous=None, rfc3490=True, never_cut=False, with_server_list=False, server_list=None, interface=None, proxy=None):
 	previous = previous or []
 	server_list = server_list or []
 	# Sometimes IANA simply won't give us the right root WHOIS server
@@ -72,7 +72,7 @@ def get_whois_raw(domain, server="", previous=None, rfc3490=True, never_cut=Fals
 	else:
 		return new_list
 
-def get_root_server(domain, interface=None):
+def get_root_server(domain, interface=None, proxy=None):
 	data = whois_request(domain, "whois.iana.org", interface=interface)
 	for line in [x.strip() for x in data.splitlines()]:
 		match = re.match("refer:\s*([^\s]+)", line)
@@ -81,9 +81,15 @@ def get_root_server(domain, interface=None):
 		return match.group(1)
 	raise shared.WhoisException("No root WHOIS server found for domain.")
 
-def whois_request(domain, server, port=43, interface=None):
+def whois_request(domain, server, port=43, interface=None, proxy=None):
 	#sock = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
-	sock = socket.create_connection((server, port), 10, (interface, 0))
+	if proxy:
+		phost, pport = proxy.split(':')
+		sock = socks.socksocket()
+		sock.set_proxy(socks.SOCK5, phost, int(pport))
+		sock.connect((server, port))
+	else:
+		sock = socket.create_connection((server, port), 10, (interface, 0))
 	sock.send(("%s\r\n" % domain).encode("utf-8"))
 	buff = b""
 	while True:
