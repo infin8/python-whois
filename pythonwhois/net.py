@@ -86,7 +86,7 @@ def whois_request(domain, server, port=43, interface=None, proxy=None):
 	if proxy:
 		phost, pport = proxy.split(':')
 		sock = socks.socksocket()
-		sock.set_proxy(socks.SOCK5, phost, int(pport))
+		sock.set_proxy(socks.SOCKS5, phost, int(pport))
 		sock.connect((server, port))
 	else:
 		sock = socket.create_connection((server, port), 10, (interface, 0))
