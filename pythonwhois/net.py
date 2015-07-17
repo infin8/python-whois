@@ -30,7 +30,7 @@ def get_whois_raw(domain, server="", previous=None, rfc3490=True, never_cut=Fals
 				target_server = exc_serv
 				break
 		if is_exception == False:
-			target_server = get_root_server(domain, interface=interface)
+			target_server = get_root_server(domain, interface=interface, proxy=proxy)
 	else:
 		target_server = server
 	if target_server == "whois.jprs.jp":
@@ -41,7 +41,7 @@ def get_whois_raw(domain, server="", previous=None, rfc3490=True, never_cut=Fals
 		request_domain = "=%s" % domain # Avoid partial matches
 	else:
 		request_domain = domain
-	response = whois_request(request_domain, target_server, interface=interface)
+	response = whois_request(request_domain, target_server, interface=interface, proxy=proxy)
 	if never_cut:
 		# If the caller has requested to 'never cut' responses, he will get the original response from the server (this is
 		# useful for callers that are only interested in the raw data). Otherwise, if the target is verisign-grs, we will
@@ -66,14 +66,14 @@ def get_whois_raw(domain, server="", previous=None, rfc3490=True, never_cut=Fals
 			referal_server = match.group(2)
 			if referal_server != server and "://" not in referal_server: # We want to ignore anything non-WHOIS (eg. HTTP) for now.
 				# Referal to another WHOIS server...
-				return get_whois_raw(domain, referal_server, new_list, server_list=server_list, with_server_list=with_server_list, interface=interface)
+				return get_whois_raw(domain, referal_server, new_list, server_list=server_list, with_server_list=with_server_list, interface=interface, proxy=proxy)
 	if with_server_list:
 		return (new_list, server_list)
 	else:
 		return new_list
 
 def get_root_server(domain, interface=None, proxy=None):
-	data = whois_request(domain, "whois.iana.org", interface=interface)
+	data = whois_request(domain, "whois.iana.org", interface=interface, proxy=proxy)
 	for line in [x.strip() for x in data.splitlines()]:
 		match = re.match("refer:\s*([^\s]+)", line)
 		if match is None:
