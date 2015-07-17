@@ -434,7 +434,7 @@ else:
 		return isinstance(data, str)
 
 
-def parse_raw_whois(raw_data, normalized=None, never_query_handles=True, handle_server=""):
+def parse_raw_whois(raw_data, normalized=None, never_query_handles=True, handle_server="", interface=None):
 	normalized = normalized or []
 	data = {}
 
@@ -559,7 +559,7 @@ def parse_raw_whois(raw_data, normalized=None, never_query_handles=True, handle_
 					data["nameservers"] = [match.strip()]
 		
 
-	data["contacts"] = parse_registrants(raw_data, never_query_handles, handle_server)
+	data["contacts"] = parse_registrants(raw_data, never_query_handles, handle_server, interface=interface)
 
 	# Parse dates
 	try:
@@ -841,7 +841,7 @@ def remove_suffixes(data):
 		
 	return cleaned_list
 
-def parse_registrants(data, never_query_handles=True, handle_server=""):
+def parse_registrants(data, never_query_handles=True, handle_server="", interface=None):
 	registrant = None
 	tech_contact = None
 	billing_contact = None
@@ -900,7 +900,7 @@ def parse_registrants(data, never_query_handles=True, handle_server=""):
 							# WHOIS server for looking up the handle information separately.
 							if never_query_handles == False:
 								try:
-									contact = fetch_nic_contact(data_reference["handle"], handle_server)
+									contact = fetch_nic_contact(data_reference["handle"], handle_server, interface=interface)
 									data_reference.update(contact)
 								except shared.WhoisException as e:
 									pass # No data found. TODO: Log error?
@@ -986,8 +986,8 @@ def parse_registrants(data, never_query_handles=True, handle_server=""):
 		"billing": billing_contact,
 	}
 
-def fetch_nic_contact(handle, lookup_server):
-	response = net.get_whois_raw(handle, lookup_server)
+def fetch_nic_contact(handle, lookup_server, interface=None):
+	response = net.get_whois_raw(handle, lookup_server, interface=interface)
 	response = [segment.replace("\r", "") for segment in response] # Carriage returns are the devil
 	results = parse_nic_contact(response)
 	
